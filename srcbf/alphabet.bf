@@ -21,6 +21,3 @@
 << [Loop body: print char, increment char, decrement counter]
 >
 [>.+<-]
-
-<<<<<<<
-.
