@@ -1,0 +1,2 @@
+[Print a beep character]
++++++++.
