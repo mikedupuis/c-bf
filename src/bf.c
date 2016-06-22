@@ -55,19 +55,26 @@ END:
 	return result;
 }
 
+// Safely increment an index
 static BF_RESULT s_increment_index(unsigned int *index, unsigned int maximum)
 {
-	bfprintf("s_increment_index incrementing data at address %x from %d to %d\n", index, *index, *index + 1);
+	bfprintf(" s_increment_index incrementing data at address %x from %d to %d\n", index, *index, *index + 1);
 	(*index)++;
 
 	return (*index > maximum) ? BF_R_FAILURE : BF_R_SUCCESS;
 }
 
-static BF_RESULT s_decrement_index(unsigned int *index, unsigned int minimum)
+// Safely decrement an index
+static BF_RESULT s_decrement_index(unsigned int *index)
 {
-	(*index)--;
+	bfprintf(" s_decrement_index decrementing data at address %x from %d to %d\n", index, *index, *index - 1);
 
-	return (*index < minimum) ? BF_R_FAILURE : BF_R_SUCCESS;
+	// Cannot decrement beyond 0
+	if (*index == 0)
+		return BF_R_FAILURE;
+
+	(*index)--;
+	return BF_R_SUCCESS;
 }
 
 static BF_RESULT run_bf(void)
@@ -79,37 +86,43 @@ static BF_RESULT run_bf(void)
 	char c;
 
 	for (instruction_index = 0; instruction_index < program_length; instruction_index++) {
+#if 0
 		if (debug)
 			sleep(1);
+#endif
 		c = program[instruction_index];
-		bfprintf("Processing instruction %c\n", c);
 		switch (c) {
 			case '+': 
+				bfprintf("Processing instruction %c\n", c);
 				bfprintf(" incrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] + 1);
 				data[data_index]++; 
 				break;
 
 			case '-':
+				bfprintf("Processing instruction %c\n", c);
 				bfprintf(" decrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] - 1);
 				data[data_index]--;
 				break;
 
 			case '.':
+				bfprintf("Processing instruction %c\n", c);
 				if (debug) {
 					memset(data_string, 0, 2);
 					snprintf(data_string, 2, "%c", data[data_index]);
 					strncat(output, data_string, 1024);
 				}
 				else {
-					putchar(data[data_index]);
+					fprintf(stdout, "%c", data[data_index]);
 				}
 				break;
 
 			case ',':
+				bfprintf("Processing instruction %c\n", c);
 				data[data_index] = (char)getchar();
 				break;
 
 			case '>':
+				bfprintf("Processing instruction %c\n", c);
 				if (BF_R_SUCCESS != s_increment_index(&data_index, DATA_SIZE)) {
 					fprintf(stderr, "ERROR: Data out-of-bounds while incrementing\n");
 					return BF_R_FAILURE;
@@ -117,13 +130,15 @@ static BF_RESULT run_bf(void)
 				break;
 
 			case '<':
-				if (BF_R_SUCCESS != s_decrement_index(&data_index, 0)) {
+				bfprintf("Processing instruction %c\n", c);
+				if (BF_R_SUCCESS != s_decrement_index(&data_index)) {
 					fprintf(stderr, "ERROR: Data out-of-bounds while decrementing\n");
 					return BF_R_FAILURE;
 				}
 				break;
 
 			case '[':
+				bfprintf("Processing instruction %c\n", c);
 				if (data[data_index] == 0) { /* If the loop is done, advance to the matching ] instruction */
 					unsigned int loop_depth = 1; /* The number of ]s to find */
 					while (loop_depth > 0) {
@@ -148,11 +163,12 @@ static BF_RESULT run_bf(void)
 				break;
 
 			case ']':
+				bfprintf("Processing instruction %c\n", c);
 				// Return to the matching [ instruction
 				{
 					unsigned int loop_depth = 1; // The number of [s to find
 					while (loop_depth > 0) {
-						if (BF_R_SUCCESS != s_decrement_index(&instruction_index, 0)) {
+						if (BF_R_SUCCESS != s_decrement_index(&instruction_index)) {
 							fprintf(stderr, "Instruction: Data out-of-bounds while decrementing\n");
 							return BF_R_FAILURE;
 						}
@@ -169,8 +185,15 @@ static BF_RESULT run_bf(void)
 				instruction_index--; // do this without regard for safety because the loop iterator increments this value
 				break;
 
+			default:
+				bfprintf("Skipping non-instruction %c\n", c);
+				break;
+
 		}
 	}
+
+	// Print a newline to flush the stdout buffer.
+	printf("\n");
 
 	return BF_R_SUCCESS;
 }
@@ -201,7 +224,7 @@ static void parse_args(int argc, const char **argv)
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
-			snprintf(bf_file_name, 1024, current_arg);
+			snprintf(bf_file_name, 1024, "%s", current_arg);
 		}
 	}
 
@@ -221,19 +244,19 @@ int main(int argc, const char **argv)
 	/* Process the source file */
 	bfprintf("reading bf source file\n");
 	if (BF_R_SUCCESS != (status = read_bf())) {
-		fprintf(stderr, "Failed to read instructions, exiting!");
+		fprintf(stderr, "Failed to read instructions, exiting!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Run the program */
 	bfprintf("running bf program\n");
 	if (BF_R_SUCCESS != (status = run_bf())) {
-		fprintf(stderr, "Failed to run program, exiting!");
+		fprintf(stderr, "Failed to run program, exiting!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	if (debug)
-		printf(output);
+		printf("%s\n", output);
 
 	return status;
 }
