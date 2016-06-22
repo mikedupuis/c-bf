@@ -2,8 +2,8 @@
 A (brainfuck)[https://en.wikipedia.org/wiki/Brainfuck] interpreter, written in C for Linux.
 
 ## Installation
-* `github clone https://www.github.com/zabertooth/cbrainfuck`
-* `cd src`
+* `git clone https://www.github.com/zabertooth/cbrainfuck`
+* `cd cbrainfuck/src`
 * `make install`
 * `cd ../srcbf`
 * `bf alphabet.bf`
