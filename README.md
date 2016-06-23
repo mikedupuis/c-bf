@@ -45,7 +45,7 @@ Which correspond to the character values:
 
     NUL 'F' 'd' RS  \n
     
-This isn't what we want, but these characters are close to what we need. From here on we will adjust the values and print them.
+This doesn't look much like "Hello World!", but these characters are close to what we need and kept the initializer code brief. From here on we will adjust the values and print them.
 First, advance to index 1, which holds the value 'F'. Increment it to 'H' and print:
 
     >++.
