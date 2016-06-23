@@ -2,7 +2,7 @@
 A [brainfuck](https://en.wikipedia.org/wiki/Brainfuck) interpreter, written in C for Linux.
 
 ## Brainfuck
-Brainfuck is an esoteric programming language. It was created by Urban Müller in 1993. The language is Turing-complete. The language itself supports only eight commands. The structure of a Brainfuck program is a sequence of these commands, along with an array of single bytes, which represents the state of the program, two streams of bytes, which are used for input and output.
+Brainfuck is an esoteric programming language. It was created by Urban Müller in 1993. The language is Turing-complete. The language itself supports only eight commands. The structure of a Brainfuck program is a sequence of these commands, along with an array of single bytes represents the state of the program, and two streams of bytes, which are used for input and output.
 
 ### Commands
 Command | Meaning
