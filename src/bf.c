@@ -4,14 +4,10 @@
 
 #include "bf.h"
 
-static char program[PROGRAM_SIZE];
-static char output[1024];
-static unsigned int program_length;
-static char debug;
-static char bf_file_name[1024] = {0};
+GBL_STR gbl = {0};
 
-static void bfprintf(char *fmt, ...) {
-	if (debug) {
+static void bf_printf(char *fmt, ...) {
+	if (gbl.debug) {
 		va_list args;
 		va_start(args, fmt);
 		vprintf(fmt, args);
@@ -19,34 +15,34 @@ static void bfprintf(char *fmt, ...) {
 	}
 }
 
-static BF_RESULT read_bf(void)
+static RESULT read_bf(void)
 {
-	BF_RESULT result = BF_R_FAILURE;
+	RESULT result = FAILURE;
 	FILE *fp = NULL;
 	char c;
 
 	/* Open the source file */
-	if (NULL == (fp = fopen(bf_file_name, "r"))) {
-		fprintf(stderr, "ERROR: Failed to open source file '%s'\n", bf_file_name);
+	if (NULL == (fp = fopen(gbl.file_name, "r"))) {
+		fprintf(stderr, "ERROR: Failed to open source file '%s'\n", gbl.file_name);
 		goto END;
 	}
 
 	/* Clear the program's memory */
-	memset(program, 0, PROGRAM_SIZE);
-	program_length = 0;
+	memset(gbl.program, 0, PROGRAM_SIZE);
+	gbl.program_length = 0;
 
 	/* Copy the input to the program's memory */
 	while (EOF != (c = (char)getc(fp))) {
-		if (program_length == PROGRAM_SIZE) {
+		if (gbl.program_length == PROGRAM_SIZE) {
 			fprintf(stderr, "ERROR: Program exceeds maximum size %d\n", PROGRAM_SIZE);
 			goto END;
 		}
 
-		program[program_length] = c;
-		program_length++;
+		gbl.program[gbl.program_length] = c;
+		gbl.program_length++;
 	}
 
-	result = BF_R_SUCCESS;
+	result = SUCCESS;
 
 END:
 	if (NULL != fp)
@@ -56,151 +52,168 @@ END:
 }
 
 // Safely increment an index
-static BF_RESULT s_increment_index(unsigned int *index, unsigned int maximum)
+static RESULT s_increment_index(unsigned int *index, unsigned int maximum)
 {
-	bfprintf(" s_increment_index incrementing data at address %x from %d to %d\n", index, *index, *index + 1);
+	bf_printf(" s_increment_index incrementing data at address %x from %d to %d\n", index, *index, *index + 1);
 	(*index)++;
 
-	return (*index > maximum) ? BF_R_FAILURE : BF_R_SUCCESS;
+	return (*index > maximum) ? FAILURE : SUCCESS;
 }
 
 // Safely decrement an index
-static BF_RESULT s_decrement_index(unsigned int *index)
+static RESULT s_decrement_index(unsigned int *index)
 {
-	bfprintf(" s_decrement_index decrementing data at address %x from %d to %d\n", index, *index, *index - 1);
+	bf_printf(" s_decrement_index decrementing data at address %x from %d to %d\n", index, *index, *index - 1);
 
 	// Cannot decrement beyond 0
 	if (*index == 0)
-		return BF_R_FAILURE;
+		return FAILURE;
 
 	(*index)--;
-	return BF_R_SUCCESS;
+	return SUCCESS;
 }
 
-static BF_RESULT run_bf(void)
-{
-	unsigned short data[DATA_SIZE] = {0};
-	unsigned int data_index = 0;
-	char data_string[2];
-	unsigned int instruction_index = 0;
-	char c;
+#define MOVE_INSTRUCTION_POINTER_ONE(DIRECTION) \
+	do { \
+		switch (DIRECTION) { \
+			case DECREMENT: \
+				if (instruction_index == 0) { \
+					fprintf(stderr, "Error: Instruction pointer out-of-bounds while decrementing\n"); \
+					return FAILURE; \
+				} \
+				instruction_index--; \
+				break; \
+			case INCREMENT: \
+				if (instruction_index >= gbl.program_length) { \
+					fprintf(stderr, "Error: Instruction pointer out-of-bounds while incrementing\n"); \
+					return FAILURE; \
+				} \
+				instruction_index++; \
+				break; \
+			default: \
+				fprintf(stderr, "Error: Invalid pointer movement direction %d\n", DIRECTION); \
+				return FAILURE; \
+		} \
+	} while (0)
 
-	for (instruction_index = 0; instruction_index < program_length; instruction_index++) {
+#define INCREMENT_INSTRUCTION_POINTER() MOVE_INSTRUCTION_POINTER_ONE(INCREMENT)
+#define DECREMENT_INSTRUCTION_POINTER() MOVE_INSTRUCTION_POINTER_ONE(DECREMENT)
+static RESULT run_bf(void)
+{
+	char data[DATA_SIZE] = {0};
+	unsigned int data_index = 0;
+	char data_string[2] = {0};
+	unsigned int instruction_index = 0;
+
+	char instruction;
+	while ('\0' != (instruction = gbl.program[instruction_index])) {
 #if 0
-		if (debug)
+		if (gbl.debug)
 			sleep(1);
 #endif
-		c = program[instruction_index];
-		switch (c) {
-			case '+': 
-				bfprintf("Processing instruction %c\n", c);
-				bfprintf(" incrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] + 1);
+		switch (instruction) { // Comments describe the language specification
+			case '+': // Increment the value of the data pointer
+				bf_printf("Processing instruction %c\n", instruction);
+				bf_printf(" incrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] + 1);
 				data[data_index]++; 
 				break;
 
-			case '-':
-				bfprintf("Processing instruction %c\n", c);
-				bfprintf(" decrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] - 1);
+			case '-': // Decrement the value of the data pointer
+				bf_printf("Processing instruction %c\n", instruction);
+				bf_printf(" decrementing data at index %d from %d to %d\n", data_index, data[data_index], data[data_index] - 1);
 				data[data_index]--;
 				break;
 
-			case '.':
-				bfprintf("Processing instruction %c\n", c);
-				if (debug) {
+			case '.': // Print the value of the data pointer as a character
+				bf_printf("Processing instruction c\n", instruction);
+				if (gbl.debug) {
 					memset(data_string, 0, 2);
 					snprintf(data_string, 2, "%c", data[data_index]);
-					strncat(output, data_string, 1024);
+					strncat(gbl.output, data_string, 1024);
 				}
 				else {
 					fprintf(stdout, "%c", data[data_index]);
 				}
 				break;
 
-			case ',':
-				bfprintf("Processing instruction %c\n", c);
+			case ',': // Accept one byte of input and store it in the data pointer
+				bf_printf("Processing instruction c\n", instruction);
 				data[data_index] = (char)getchar();
 				break;
 
-			case '>':
-				bfprintf("Processing instruction %c\n", c);
-				if (BF_R_SUCCESS != s_increment_index(&data_index, DATA_SIZE)) {
+			case '>': // Increment the data pointer to the next address
+				bf_printf("Processing instruction c\n", instruction);
+				if (SUCCESS != s_increment_index(&data_index, DATA_SIZE)) {
 					fprintf(stderr, "ERROR: Data out-of-bounds while incrementing\n");
-					return BF_R_FAILURE;
+					return FAILURE;
 				}
 				break;
 
-			case '<':
-				bfprintf("Processing instruction %c\n", c);
-				if (BF_R_SUCCESS != s_decrement_index(&data_index)) {
+			case '<': // Decrement the data pointer to the previous address
+				bf_printf("Processing instruction c\n", instruction);
+				if (SUCCESS != s_decrement_index(&data_index)) {
 					fprintf(stderr, "ERROR: Data out-of-bounds while decrementing\n");
-					return BF_R_FAILURE;
+					return FAILURE;
 				}
 				break;
 
-			case '[':
-				bfprintf("Processing instruction %c\n", c);
-				if (data[data_index] == 0) { /* If the loop is done, advance to the matching ] instruction */
-					unsigned int loop_depth = 1; /* The number of ]s to find */
+			case '[': // If the value of the data pointer is 0, seek the corresponding ] instruction
+				bf_printf("Processing instruction c\n", instruction);
+				if (data[data_index] == 0) {
+					unsigned int loop_depth = 1; // The number of ]s to find
 					while (loop_depth > 0) {
-						if (BF_R_SUCCESS != s_increment_index(&instruction_index, PROGRAM_SIZE)) {
-							fprintf(stderr, "Instruction: Data out-of-bounds while incrementing\n");
-							return BF_R_FAILURE;
-						}
+						INCREMENT_INSTRUCTION_POINTER();
 						
-						if (program[instruction_index] == '[')
+						if (gbl.program[instruction_index] == '[')
 							loop_depth++;
 
-						if (program[instruction_index] == ']')
+						if (gbl.program[instruction_index] == ']')
 							loop_depth--;
 					}
-					
-					// Advance to the instruction BEYOND the ']'
-					if (BF_R_SUCCESS != s_increment_index(&instruction_index, PROGRAM_SIZE)) {
-						fprintf(stderr, "Instruction: Data out-of-bounds while incrementing\n");
-						return BF_R_FAILURE;
-					}
 				}
+
+				// NOTE: at this instant, the instruction pointer will point to the ] instruction we sought out
+				//   the end of the loop body will handle advancing the pointer to the next instruction
 				break;
 
-			case ']':
-				bfprintf("Processing instruction %c\n", c);
-				// Return to the matching [ instruction
-				{
+			case ']': // If the value of the data pointer is not 0, seek the corresponding ] instruction
+				bf_printf("Processing instruction c\n", instruction);
+				if (data[data_index] != 0) {
 					unsigned int loop_depth = 1; // The number of [s to find
 					while (loop_depth > 0) {
-						if (BF_R_SUCCESS != s_decrement_index(&instruction_index)) {
-							fprintf(stderr, "Instruction: Data out-of-bounds while decrementing\n");
-							return BF_R_FAILURE;
-						}
+						DECREMENT_INSTRUCTION_POINTER();
 						
-						if (program[instruction_index] == '[')
+						if (gbl.program[instruction_index] == '[')
 							loop_depth--;
 
-						if (program[instruction_index] == ']')
+						if (gbl.program[instruction_index] == ']')
 							loop_depth++;
 					}
 				}
 
-				// Since we want to process the [ instruction on the next iteration, return to one element BEFORE that instruction because the loop iterator increments instruction_index
-				instruction_index--; // do this without regard for safety because the loop iterator increments this value
+				// NOTE: at this instant, the instruction pointer will point to the ] instruction we sought out
+				//   the end of the loop body will handle advancing the pointer to the next instruction
 				break;
 
 			default:
-				bfprintf("Skipping non-instruction %c\n", c);
+				bf_printf("Skipping non-instruction c\n", instruction);
 				break;
 
 		}
+
+		INCREMENT_INSTRUCTION_POINTER();
 	}
 
 	// Print a newline to flush the stdout buffer.
 	printf("\n");
 
-	return BF_R_SUCCESS;
+	return SUCCESS;
 }
 
 static void usage(const char *app_name)
 {
-	fprintf(stderr, "Usage: %s filename\n", app_name);
+	fprintf(stderr, "Usage: %s [-d] filename\n", app_name);
+	fprintf(stderr, "  -d    gbl.debug\n");
 }
 
 static void parse_args(int argc, const char **argv)
@@ -216,19 +229,19 @@ static void parse_args(int argc, const char **argv)
 	for (current_arg_index = 1; current_arg_index < argc; current_arg_index++) {
 		current_arg = argv[current_arg_index];
 		if (0 == strcmp(current_arg, "-d")) {
-			debug = 1;
+			gbl.debug = 1;
 		}
 
 		else {
-			if (0 != strcmp("", bf_file_name)) {
+			if (0 != strcmp("", gbl.file_name)) {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
-			snprintf(bf_file_name, 1024, "%s", current_arg);
+			snprintf(gbl.file_name, 1024, "%s", current_arg);
 		}
 	}
 
-	if (0 == strcmp(bf_file_name, "")) {
+	if (0 == strcmp(gbl.file_name, "")) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -236,27 +249,27 @@ static void parse_args(int argc, const char **argv)
 
 int main(int argc, const char **argv)
 {
-	BF_RESULT status;
+	RESULT status;
 
 	/* Parse the command line arguments */
 	parse_args(argc, argv);
 
 	/* Process the source file */
-	bfprintf("reading bf source file\n");
-	if (BF_R_SUCCESS != (status = read_bf())) {
+	bf_printf("reading bf source file\n");
+	if (SUCCESS != (status = read_bf())) {
 		fprintf(stderr, "Failed to read instructions, exiting!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Run the program */
-	bfprintf("running bf program\n");
-	if (BF_R_SUCCESS != (status = run_bf())) {
+	bf_printf("running bf program\n");
+	if (SUCCESS != (status = run_bf())) {
 		fprintf(stderr, "Failed to run program, exiting!\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if (debug)
-		printf("%s\n", output);
+	if (gbl.debug)
+		printf("%s\n", gbl.output);
 
 	return status;
 }

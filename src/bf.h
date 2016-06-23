@@ -3,11 +3,27 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
-#define PROGRAM_SIZE    4096
+#define PROGRAM_SIZE    65535
 #define DATA_SIZE       65535
+#define OUTPUT_SIZE      8192
+#define FILE_NAME_SIZE   1024
 
-typedef enum _BF_RESULT {
-	BF_R_SUCCESS,
-	BF_R_FAILURE
-} BF_RESULT;
+typedef enum _VALUE_CHANGE_DIRECTIONS {
+	INCREMENT,
+	DECREMENT
+} VALUE_CHANGE_DIRECTIONS;
+
+typedef enum _RESULT {
+	SUCCESS,
+	FAILURE
+} RESULT;
+
+typedef struct _GBL_STR {
+	bool debug;
+	char program[PROGRAM_SIZE];
+	char output[OUTPUT_SIZE];
+	unsigned long program_length;
+	char file_name[FILE_NAME_SIZE];
+} GBL_STR;
