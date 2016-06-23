@@ -1,3 +1,7 @@
+/* bf.h
+ * Copyright (c) Mike Dupuis 2016
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
