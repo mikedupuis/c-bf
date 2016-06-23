@@ -52,7 +52,7 @@ First, advance to index 1, which holds the value 'F'. Increment it to 'H' and pr
 
 Next, advance to index 2, which holds 'd'. Increment to 'e' and print:
 
-    >++.
+    >+.
     
 For brevity, the rest of the program is condensed. 
 
