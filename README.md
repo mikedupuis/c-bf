@@ -58,7 +58,7 @@ For brevity, the rest of the program is condensed.
 
 Print "llo World!\n":
 
-    >+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+    +++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
 
 ## Installation
 * `git clone https://www.github.com/zabertooth/cbrainfuck`
