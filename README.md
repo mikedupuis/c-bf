@@ -16,6 +16,50 @@ Command | Meaning
 [       | If the value of the data pointer is 0, jump to the matching ] instruction
 ]       | If the value of the data pointer is not 0, jump to the matching [ instruction
 
+## hello.bf
+This is a "Hello World!" program written in Brainfuck.
+
+### Program
+
+    ++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+    
+### Breakdown:
+
+Initialize a data index 0 to 10.
+
+    ++++++++++
+    
+Create a loop that will run until data index 0 reaches 0
+
+    [(don't worry about the loop body -)]
+    
+In the loop body, increment data index 1 by 7, index 2 by 10, 3 by 3, 4 by 1. Finally, return to index 0 and decrement. We initialized the loop counter to 10 above, so this loop runs 10 times.
+
+    >+++++++>++++++++++>+++>+<<<<-
+
+Now our data array holds the following values:
+
+    0 70 100 30 10
+    
+Which correspond to the character values:
+
+    NUL 'F' 'd' RS  \n
+    
+This doesn't look much like "Hello World!", but these characters are close to what we need and kept the initializer code brief. From here on we will adjust the values and print them.
+First, advance to index 1, which holds the value 'F'. Increment it to 'H' and print:
+
+    >++.
+
+Next, advance to index 2, which holds 'd'. Increment to 'e' and print:
+
+    >+.
+    
+For brevity, the rest of the program is condensed. 
+
+Print "llo World!\n":
+
+    +++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+
 ## Installation
 * `git clone https://www.github.com/zabertooth/cbrainfuck`
 * `cd cbrainfuck/src`
