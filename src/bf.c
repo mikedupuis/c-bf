@@ -1,4 +1,4 @@
-/* BF in C (http://github.com/zabertooth/brainfuck-c)
+/* BF in C (http://github.com/zabertooth/cbrainfuck)
  * Copyright (c) 2016 Mike Dupuis
  */
 
