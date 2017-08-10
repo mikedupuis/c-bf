@@ -7,14 +7,14 @@ BF is an esoteric programming language. It was created by Urban Müller in 1993.
 ### Commands
 Command | Meaning
 ------- | ------- 
->       | Increment the data pointer
-<       | Decrement the data pointer
-+       | Increment the value of the data pointer
--       | Decrement the value of the data pointer
-.       | Send the value of the data pointer to the output stream
-,       | Receive one byte of data from the input stream and store that value in at the data pointer
-[       | If the value of the data pointer is 0, jump to the matching ] instruction
-]       | If the value of the data pointer is not 0, jump to the matching [ instruction
+\>       | Increment the data pointer
+\<       | Decrement the data pointer
+\+       | Increment the value of the data pointer
+\-       | Decrement the value of the data pointer
+\.       | Send the value of the data pointer to the output stream
+\,       | Receive one byte of data from the input stream and store that value in at the data pointer
+\[       | If the value of the data pointer is 0, jump to the matching ] instruction
+\]       | If the value of the data pointer is not 0, jump to the matching [ instruction
 
 ## hello.bf
 This is a "Hello World!" program written in Brain
