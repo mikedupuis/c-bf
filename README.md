@@ -62,7 +62,7 @@ Print "llo World!\n":
     +++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
 
 ## Installation
-* `git clone https://www.github.com/zabertooth/c-bf`
+* `git clone https://www.github.com/mikedupuis/c-bf`
 * `cd c-bf/src`
 * `make install`
 * `bf ../srcbf/alphabet.bf`
